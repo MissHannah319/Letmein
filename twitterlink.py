@@ -1,27 +1,35 @@
 import os
+import subprocess
 import tweepy
 from flask import Flask, redirect, request, session
 from dotenv import load_dotenv
 
+# Ensure Gunicorn is installed
+try:
+    import gunicorn
+except ImportError:
+    print("Gunicorn not found. Installing...")
+    subprocess.run(["pip", "install", "gunicorn"])
+
 # Load environment variables
 load_dotenv()
 
-# Twitter API Credentials (App-level keys)
+# Twitter API credentials
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
 CALLBACK_URL = os.getenv("CALLBACK_URL")
 
-# Ensure required environment variables are set
+# Ensure environment variables are set
 if not all([API_KEY, API_SECRET, CALLBACK_URL]):
-    raise ValueError("❌ ERROR: Missing environment variables!")
+    raise ValueError("❌ ERROR: Missing API keys!")
 
-# Set up Flask
+# Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # Random secure key for session handling
+app.secret_key = os.urandom(24)  # Random secure key for sessions
 
 @app.route("/")
 def login():
-    """Step 1: Redirect user to Twitter for authentication."""
+    """Redirect user to Twitter for authentication."""
     auth = tweepy.OAuthHandler(API_KEY, API_SECRET, CALLBACK_URL)
     try:
         redirect_url = auth.get_authorization_url()
@@ -33,22 +41,20 @@ def login():
 
 @app.route("/callback")
 def callback():
-    """Step 2: Twitter redirects here after user authentication."""
+    """Handle Twitter OAuth callback."""
     request_token = session.pop("request_token", None)
     request_token_secret = session.pop("request_token_secret", None)
 
     if not request_token or not request_token_secret:
         return "❌ Error: Missing request token in session."
 
-    # Authenticate user
     auth = tweepy.OAuthHandler(API_KEY, API_SECRET, CALLBACK_URL)
     auth.request_token = {
-        "oauth_token": request_token,
+        "oauth_token": request.args.get("oauth_token"),
         "oauth_token_secret": request_token_secret
     }
 
     try:
-        # Exchange request token for access token (user-specific)
         auth.get_access_token(request.args.get("oauth_verifier"))
         api = tweepy.API(auth)
 
@@ -63,6 +69,7 @@ def callback():
     except tweepy.TweepyException as e:
         return f"❌ Error updating profile: {str(e)}"
 
+# Force Gunicorn to start properly on Render
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # Default to 10000 if not set
-    app.run(host="0.0.0.0", port=port, debug=True)
+    port = int(os.environ.get("PORT", 10000))  # Use Render's assigned port
+    print(f"
