@@ -1,60 +1,46 @@
 import os
 import tweepy
-import requests
-from flask import Flask, redirect, request, session, url_for
 from dotenv import load_dotenv
 
+# Load environment variables from .env (for local development)
 load_dotenv()
 
-# Twitter API credentials
-API_KEY = os.getenv("LqfefyeCQ4qq3I4xLvVlH2HwQ")
-API_SECRET = os.getenv("mVLQMUNlq9Q8blXv55H75MP61eIBJms28LtWzA1mYStVdDYuAV")
-CALLBACK_URL = os.getenv("letmein.onrender.com/callback")
+# Fetch environment variables
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
+ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
+CALLBACK_URL = os.getenv("CALLBACK_URL")
 
-app = Flask(__name__)
-app.secret_key = "4IMdmq02AKFP7WqFdjeQ3iaqg3A7rHaiac7EybtTbT1gh"
+# Debugging: Print the environment variables to check if they are loaded
+print("API_KEY:", API_KEY)
+print("API_SECRET:", API_SECRET)
+print("ACCESS_TOKEN:", ACCESS_TOKEN)
+print("ACCESS_TOKEN_SECRET:", ACCESS_TOKEN_SECRET)
+print("CALLBACK_URL:", CALLBACK_URL)
 
-# OAuth 1.0a authentication
+# Ensure all environment variables are loaded
+if not all([API_KEY, API_SECRET, ACCESS_TOKEN, ACCESS_TOKEN_SECRET, CALLBACK_URL]):
+    raise ValueError("❌ ERROR: One or more environment variables are missing!")
+
+# Authenticate with Twitter API
 auth = tweepy.OAuthHandler(API_KEY, API_SECRET, CALLBACK_URL)
+auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
+api = tweepy.API(auth)
 
-@app.route("/")
-def login():
+# Function to change Twitter display name and bio
+def change_profile():
     try:
-        redirect_url = auth.get_authorization_url()
-        session["request_token"] = auth.request_token
-        return redirect(redirect_url)
-    except tweepy.TweepyException as e:
-        return f"Error! Failed to get request token. {str(e)}"
-
-@app.route("/callback")
-def callback():
-    try:
-        # Get the request token from the session
-        request_token = session.get("request_token")
-        if not request_token:
-            return "Error: No request token found.", 400
-        
-        auth.request_token = {
-            "oauth_token": request.args.get("oauth_token"),
-            "oauth_token_secret": request_token
-        }
-
-        # Exchange request token for access token
-        auth.get_access_token(request.args.get("oauth_verifier"))
-
-        # Authenticate API with new user credentials
-        api = tweepy.API(auth)
-
-        # Change Twitter username & bio
         new_username = "Miss Hannah's Fan"
         new_bio = "I clicked the link and now my profile is changed!"
-
+        
+        # Update Twitter profile
         api.update_profile(name=new_username, description=new_bio)
+        print(f"✅ Success! Profile updated to: {new_username} - {new_bio}")
+    
+    except tweepy.TweepyException as e:
+        print(f"❌ Error updating profile: {str(e)}")
 
-        return f"Success! Your profile has been updated to: {new_username} - {new_bio}"
-
-    except Exception as e:
-        return f"Error: {str(e)}", 500
-
+# Run the function when the script is executed
 if __name__ == "__main__":
-    app.run(debug=True)
+    change_profile()
