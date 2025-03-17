@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Twitter API credentials
-API_KEY = os.getenv(LqfefyeCQ4qq3I4xLvVlH2HwQ)
-API_SECRET = os.getenv(mVLQMUNlq9Q8blXv55H75MP61eIBJms28LtWzA1mYStVdDYuAV)
+API_KEY = os.getenv("LqfefyeCQ4qq3I4xLvVlH2HwQ")
+API_SECRET = os.getenv("mVLQMUNlq9Q8blXv55H75MP61eIBJms28LtWzA1mYStVdDYuAV")
 CALLBACK_URL = os.getenv(letmein.onrender.com/callback)
 
 app = Flask(__name__)
