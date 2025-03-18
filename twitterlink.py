@@ -1,15 +1,7 @@
 import os
-import subprocess
 import tweepy
 from flask import Flask, redirect, request, session
 from dotenv import load_dotenv
-
-# Ensure Gunicorn is installed
-try:
-    import gunicorn
-except ImportError:
-    print("Gunicorn not found. Installing...")
-    subprocess.run(["pip", "install", "gunicorn"])
 
 # Load environment variables
 load_dotenv()
@@ -19,13 +11,13 @@ API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
 CALLBACK_URL = os.getenv("CALLBACK_URL")
 
-# Ensure environment variables are set
+# Ensure API keys are loaded
 if not all([API_KEY, API_SECRET, CALLBACK_URL]):
     raise ValueError("❌ ERROR: Missing API keys!")
 
 # Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.urandom(24)  # Random secure key for sessions
+app.secret_key = os.urandom(24)  # Secure random key for sessions
 
 @app.route("/")
 def login():
@@ -69,7 +61,7 @@ def callback():
     except tweepy.TweepyException as e:
         return f"❌ Error updating profile: {str(e)}"
 
-# Force Gunicorn to start properly on Render
+# Run Flask directly on Render's assigned port
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # Use Render's assigned port
-    print(f"
+    port = int(os.environ.get("PORT", 10000))  # Default to 10000
+    app.run(host="0.0.0.0", port=port, debug=True)
