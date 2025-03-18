@@ -2,4 +2,3 @@ flask
 tweepy
 requests
 python-dotenv
-gunicorn
