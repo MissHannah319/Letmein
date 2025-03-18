@@ -31,7 +31,7 @@ def login():
     except tweepy.TweepyException as e:
         return f"Error! Failed to get request token. {str(e)}"
 
-@app.route("/callback")
+@app.route("/callback", methods=["GET"])
 def callback():
     """Handle Twitter OAuth callback."""
     request_token = session.pop("request_token", None)
